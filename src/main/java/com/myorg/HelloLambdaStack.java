@@ -12,9 +12,7 @@ import software.amazon.awscdk.services.lambda.Architecture;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.apigateway.LambdaRestApi;
 
-import software.amazon.awscdk.BundlingOptions;
 import software.amazon.awscdk.services.s3.assets.AssetOptions;
 
 import java.util.List;
