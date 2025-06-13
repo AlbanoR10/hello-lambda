@@ -77,6 +77,7 @@ public class HelloLambdaStack extends Stack {
                                         .build())
                                 .build()))
                 .build();
+
 //
 //        LambdaRestApi api = LambdaRestApi.Builder.create(this, "ApiGwEndpoint")
 //                .restApiName("HelloApi")
