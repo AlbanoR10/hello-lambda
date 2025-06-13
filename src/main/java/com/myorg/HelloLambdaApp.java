@@ -1,10 +1,8 @@
 package com.myorg;
 
 import software.amazon.awscdk.App;
-import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
-import java.util.Arrays;
 
 public class HelloLambdaApp {
     public static void main(final String[] args) {

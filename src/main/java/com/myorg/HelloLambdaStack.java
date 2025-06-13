@@ -1,17 +1,16 @@
 package com.myorg;
 
+import software.amazon.awscdk.BundlingOutput;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.lambda.*;
+import software.amazon.awscdk.services.lambda.Runtime;
 import software.constructs.Construct;
 
 import software.amazon.awscdk.BundlingOptions;
-import software.amazon.awscdk.services.lambda.Architecture;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.lambda.Code;
 
 import software.amazon.awscdk.services.s3.assets.AssetOptions;
 
@@ -25,6 +24,24 @@ public class HelloLambdaStack extends Stack {
 
     public HelloLambdaStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
+
+        LayerVersion commonLayer = LayerVersion.Builder.create(this, "CommonJavaLibs")
+                .layerVersionName("java-libs")
+                .compatibleRuntimes(List.of(Runtime.JAVA_21))
+                .code(Code.fromAsset("lambda-layer",
+                        AssetOptions.builder()
+                                .bundling(BundlingOptions.builder()
+                                        .image(Runtime.JAVA_21.getBundlingImage())
+                                        .user("root")
+                                        .command(List.of(
+                                                "bash","-c",
+                                                // ejecuta el build.sh y copia la salida
+                                                "cd /asset-input && bash build.sh && cp -R layer/* /asset-output/"
+                                        ))
+                                        .outputType(BundlingOutput.NOT_ARCHIVED) // ya es estructura correcta
+                                        .build())
+                                .build()))
+                .build();
 
         Function hola = Function.Builder.create(this, "HolaFn")
                 .runtime(Runtime.JAVA_21)
@@ -45,6 +62,7 @@ public class HelloLambdaStack extends Stack {
                                         ))
                                         .build())
                                 .build()))
+                .layers(List.of(commonLayer))
                 .build();
 
         Function adios = Function.Builder.create(this, "AdiosFn")
@@ -66,6 +84,7 @@ public class HelloLambdaStack extends Stack {
                                         ))
                                         .build())
                                 .build()))
+                .layers(List.of(commonLayer))
                 .build();
 
         RestApi restApi = RestApi.Builder.create(this, "HelloApi")
