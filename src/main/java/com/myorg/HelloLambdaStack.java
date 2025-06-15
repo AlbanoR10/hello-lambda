@@ -28,17 +28,20 @@ public class HelloLambdaStack extends Stack {
         LayerVersion commonLayer = LayerVersion.Builder.create(this, "CommonJavaLibs")
                 .layerVersionName("java-libs")
                 .compatibleRuntimes(List.of(Runtime.JAVA_21))
-                .code(Code.fromAsset("lambda-layer",
+                .code(Code.fromAsset("lambda-layer",      // dir donde está tu pom.xml del layer
                         AssetOptions.builder()
                                 .bundling(BundlingOptions.builder()
-                                        .image(Runtime.JAVA_21.getBundlingImage())
-                                        .user("root")
+                                        .image(Runtime.JAVA_21.getBundlingImage()) // usa Corretto 21
+                                        .user("root")                              // permite escribir en /asset-output
                                         .command(List.of(
-                                                "bash","-c",
-                                                // ejecuta el build.sh y copia la salida
-                                                "cd /asset-input && bash build.sh && cp -R layer/* /asset-output/"
-                                        ))
-                                        .outputType(BundlingOutput.NOT_ARCHIVED) // ya es estructura correcta
+                                                "bash","-c", String.join(" && ",
+                                                        // 1. Construir el uber-jar
+                                                        "mvn -q clean install",
+                                                        // 2. Crear la ruta esperada y copiarlo
+                                                        "mkdir -p /asset-output/java/lib",
+                                                        "cp target/layer-java-layer-*.jar /asset-output/java/lib/"
+                                                )))
+                                        .outputType(BundlingOutput.NOT_ARCHIVED)   // CDK se ocupa del .zip
                                         .build())
                                 .build()))
                 .build();
@@ -58,7 +61,7 @@ public class HelloLambdaStack extends Stack {
                                         .command(List.of(
                                                 "bash", "-c",
                                                 // compila y deja el JAR en /asset-output
-                                                "mvn -q package && cp target/lambda-java.jar /asset-output/"
+                                                "mvn -q package && cp target/lambda-java-*.jar /asset-output/"
                                         ))
                                         .build())
                                 .build()))
@@ -80,7 +83,7 @@ public class HelloLambdaStack extends Stack {
                                         .command(List.of(
                                                 "bash", "-c",
                                                 // compila y deja el JAR en /asset-output
-                                                "mvn -q package && cp target/lambda-java.jar /asset-output/"
+                                                "mvn -q package && cp target/lambda-java-*.jar /asset-output/"
                                         ))
                                         .build())
                                 .build()))
