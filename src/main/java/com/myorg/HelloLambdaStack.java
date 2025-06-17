@@ -1,16 +1,16 @@
 package com.myorg;
 
-import software.amazon.awscdk.BundlingOutput;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.*;
 import software.amazon.awscdk.services.apigateway.LambdaIntegration;
 import software.amazon.awscdk.services.apigateway.RestApi;
 import software.amazon.awscdk.services.apigateway.StageOptions;
+import software.amazon.awscdk.services.dynamodb.Attribute;
+import software.amazon.awscdk.services.dynamodb.AttributeType;
+import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.*;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.constructs.Construct;
-
-import software.amazon.awscdk.BundlingOptions;
 
 import software.amazon.awscdk.services.s3.assets.AssetOptions;
 
@@ -24,6 +24,16 @@ public class HelloLambdaStack extends Stack {
 
     public HelloLambdaStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
+
+        Table tabla = Table.Builder.create(this, "SaludosTable")
+                .tableName("Saludos")
+                .billingMode(BillingMode.PAY_PER_REQUEST)      // sin capacity planning
+                .partitionKey(Attribute.builder()
+                        .name("pk") .type(AttributeType.STRING).build())
+                .sortKey(Attribute.builder()
+                        .name("sk") .type(AttributeType.STRING).build())
+                .removalPolicy(RemovalPolicy.DESTROY)          // ❗ solo en entornos dev
+                .build();
 
         LayerVersion commonLayer = LayerVersion.Builder.create(this, "CommonJavaLibs")
                 .layerVersionName("java-libs")
@@ -89,6 +99,12 @@ public class HelloLambdaStack extends Stack {
                                 .build()))
                 .layers(List.of(commonLayer))
                 .build();
+
+        tabla.grantReadWriteData(hola);     // holaFn puede leer/escribir
+        tabla.grantReadWriteData(adios);
+
+        hola.addEnvironment("TABLA_SALUDOS", tabla.getTableName());
+        adios.addEnvironment("TABLA_SALUDOS", tabla.getTableName());
 
         RestApi restApi = RestApi.Builder.create(this, "HelloApi")
                 .restApiName("HelloApi")
