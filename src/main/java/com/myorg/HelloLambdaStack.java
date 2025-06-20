@@ -28,12 +28,8 @@ public class HelloLambdaStack extends Stack {
         Table tablaPersonas = Table.Builder.create(this, "PersonasTable")
                 .tableName("Personas")                         // nombre real
                 .billingMode(BillingMode.PAY_PER_REQUEST)      // on-demand
-                .partitionKey(Attribute.builder()              // PK = nombre
-                        .name("nombre")
-                        .type(AttributeType.STRING)
-                        .build())
-                .sortKey(Attribute.builder()                   // SK = apellido
-                        .name("apellido")
+                .partitionKey(Attribute.builder()              // PK = id
+                        .name("id")
                         .type(AttributeType.STRING)
                         .build())
                 .removalPolicy(RemovalPolicy.DESTROY)          // ❗ solo en dev
@@ -96,17 +92,17 @@ public class HelloLambdaStack extends Stack {
 
         // POST /personas
         personas.addMethod("POST", new LambdaIntegration(persona));
+        // GET /personas
+        personas.addMethod("GET", new LambdaIntegration(persona));
 
-        // /personas/{nombre}
-        var personaNom = personas.addResource("{nombre}");
-        // /personas/{nombre}/{apellido}
-        var personaNomApe = personaNom.addResource("{apellido}");
+        // /personas/{id}
+        var personaId = personas.addResource("{id}");
 
         // GET, PUT, DELETE en la misma Lambda
         LambdaIntegration integ = new LambdaIntegration(persona);
-        personaNomApe.addMethod("GET",    integ);
-        personaNomApe.addMethod("PUT",    integ);
-        personaNomApe.addMethod("DELETE", integ);
+        personaId.addMethod("GET",    integ);
+        personaId.addMethod("PUT",    integ);
+        personaId.addMethod("DELETE", integ);
 
 
     }

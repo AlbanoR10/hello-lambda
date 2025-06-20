@@ -11,7 +11,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
-import java.time.Instant;
 import java.util.Map;
 
 public class Handler implements
@@ -40,7 +39,7 @@ public class Handler implements
         try {
             return switch (event.getHttpMethod()) {
                 case "POST"   -> handleCreate(event);
-                case "GET"    -> handleRead(event);
+                case "GET"    -> handleGet(event);
                 case "PUT"    -> handleUpdate(event);
                 case "DELETE" -> handleDelete(event);
                 default       -> response(405, "Método no permitido");
@@ -68,15 +67,31 @@ public class Handler implements
 
         Persona persona = JSON.readValue(ev.getBody(), Persona.class);
         persona.validar();
+        String id = java.util.UUID.randomUUID().toString();
+        Persona conId = persona.withId(id);
 
-        repo.create(persona);
-        return response(201, "Creada");
+        repo.create(conId);
+        return response(201, JSON.writeValueAsString(Map.of("id", id)));
+    }
+
+    /* ---------- LIST or READ ---------- */
+    private APIGatewayProxyResponseEvent handleGet(APIGatewayProxyRequestEvent ev) {
+        Map<String,String> p = ev.getPathParameters();
+        if (p == null || !p.containsKey("id")) {
+            // list all personas
+            try {
+                return response(200, JSON.writeValueAsString(repo.list()));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return handleRead(ev);
     }
 
     /* ---------- READ ---------- */
     private APIGatewayProxyResponseEvent handleRead(APIGatewayProxyRequestEvent ev) {
-        NombreApellido p = path(ev);
-        return repo.read(p.nombre(), p.apellido())
+        String id = pathId(ev);
+        return repo.read(id)
                 .<APIGatewayProxyResponseEvent>map(per ->
                 {
                     try {
@@ -92,25 +107,26 @@ public class Handler implements
     private APIGatewayProxyResponseEvent handleUpdate(APIGatewayProxyRequestEvent ev)
             throws com.fasterxml.jackson.core.JsonProcessingException {
 
+        String id = pathId(ev);
         Persona persona = JSON.readValue(ev.getBody(), Persona.class);
         persona.validar();
-        Persona personaActualizada = repo.update(persona);
+        Persona personaActualizada = repo.update(persona.withId(id));
         return response(200, JSON.writeValueAsString(personaActualizada));
     }
 
     /* ---------- DELETE ---------- */
     private APIGatewayProxyResponseEvent handleDelete(APIGatewayProxyRequestEvent ev) {
-        NombreApellido p = path(ev);
-        repo.delete(p.nombre(), p.apellido());
+        String id = pathId(ev);
+        repo.delete(id);
         return response(204, "");
     }
 
     /* ---------- Helpers ---------- */
-    private record NombreApellido(String nombre, String apellido) { }
-
-    private NombreApellido path(APIGatewayProxyRequestEvent ev) {
+    private String pathId(APIGatewayProxyRequestEvent ev) {
         Map<String,String> p = ev.getPathParameters();
-        return new NombreApellido(p.get("nombre"), p.get("apellido"));
+        if (p == null || !p.containsKey("id"))
+            throw new IllegalArgumentException("id requerido");
+        return p.get("id");
     }
 
 
