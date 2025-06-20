@@ -92,6 +92,8 @@ public class HelloLambdaStack extends Stack {
 
         // POST /personas
         personas.addMethod("POST", new LambdaIntegration(persona));
+        // GET /personas
+        personas.addMethod("GET", new LambdaIntegration(persona));
 
         // /personas/{id}
         var personaId = personas.addResource("{id}");

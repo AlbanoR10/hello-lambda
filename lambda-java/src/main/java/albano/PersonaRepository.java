@@ -53,6 +53,19 @@ public class PersonaRepository {
                 i.get("equipoFavorito").s()));
     }
 
+    /* ---------- L  I  S  T ---------- */
+    public java.util.List<Persona> list() {
+        var resp = ddb.scan(ScanRequest.builder().tableName(tabla).build());
+        return resp.items().stream()
+                .map(i -> new Persona(
+                        i.get("id").s(),
+                        i.get("nombre").s(),
+                        i.get("apellido").s(),
+                        Integer.parseInt(i.get("edad").n()),
+                        i.get("equipoFavorito").s()))
+                .toList();
+    }
+
     /* ---------- U  P  D  A  T  E ---------- */
     public Persona update(Persona p) {
         var resp = ddb.updateItem(UpdateItemRequest.builder()

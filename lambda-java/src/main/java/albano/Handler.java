@@ -39,7 +39,7 @@ public class Handler implements
         try {
             return switch (event.getHttpMethod()) {
                 case "POST"   -> handleCreate(event);
-                case "GET"    -> handleRead(event);
+                case "GET"    -> handleGet(event);
                 case "PUT"    -> handleUpdate(event);
                 case "DELETE" -> handleDelete(event);
                 default       -> response(405, "Método no permitido");
@@ -72,6 +72,20 @@ public class Handler implements
 
         repo.create(conId);
         return response(201, JSON.writeValueAsString(Map.of("id", id)));
+    }
+
+    /* ---------- LIST or READ ---------- */
+    private APIGatewayProxyResponseEvent handleGet(APIGatewayProxyRequestEvent ev) {
+        Map<String,String> p = ev.getPathParameters();
+        if (p == null || !p.containsKey("id")) {
+            // list all personas
+            try {
+                return response(200, JSON.writeValueAsString(repo.list()));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return handleRead(ev);
     }
 
     /* ---------- READ ---------- */
