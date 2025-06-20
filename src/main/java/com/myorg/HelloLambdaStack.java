@@ -25,14 +25,18 @@ public class HelloLambdaStack extends Stack {
     public HelloLambdaStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
-        Table tabla = Table.Builder.create(this, "SaludosTable")
-                .tableName("Saludos")
-                .billingMode(BillingMode.PAY_PER_REQUEST)      // sin capacity planning
-                .partitionKey(Attribute.builder()
-                        .name("pk") .type(AttributeType.STRING).build())
-                .sortKey(Attribute.builder()
-                        .name("sk") .type(AttributeType.STRING).build())
-                .removalPolicy(RemovalPolicy.DESTROY)          // ❗ solo en entornos dev
+        Table tablaPersonas = Table.Builder.create(this, "PersonasTable")
+                .tableName("Personas")                         // nombre real
+                .billingMode(BillingMode.PAY_PER_REQUEST)      // on-demand
+                .partitionKey(Attribute.builder()              // PK = nombre
+                        .name("nombre")
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()                   // SK = apellido
+                        .name("apellido")
+                        .type(AttributeType.STRING)
+                        .build())
+                .removalPolicy(RemovalPolicy.DESTROY)          // ❗ solo en dev
                 .build();
 
         LayerVersion commonLayer = LayerVersion.Builder.create(this, "CommonJavaLibs")
@@ -56,7 +60,7 @@ public class HelloLambdaStack extends Stack {
                                 .build()))
                 .build();
 
-        Function hola = Function.Builder.create(this, "HolaFn")
+        Function persona = Function.Builder.create(this, "PersonaCrudFn")
                 .runtime(Runtime.JAVA_21)
                 .architecture(Architecture.ARM_64)
                 .memorySize(512)
@@ -100,24 +104,32 @@ public class HelloLambdaStack extends Stack {
                 .layers(List.of(commonLayer))
                 .build();
 
-        tabla.grantReadWriteData(hola);     // holaFn puede leer/escribir
-        tabla.grantReadWriteData(adios);
+        tablaPersonas.grantReadWriteData(persona);     // holaFn puede leer/escribir
+        tablaPersonas.grantReadWriteData(adios);
 
-        hola.addEnvironment("TABLA_SALUDOS", tabla.getTableName());
-        adios.addEnvironment("TABLA_SALUDOS", tabla.getTableName());
+        persona.addEnvironment("TABLA_PERSONAS", tablaPersonas.getTableName());
+        adios.addEnvironment("TABLA_PERSONAS", tablaPersonas.getTableName());
 
-        RestApi restApi = RestApi.Builder.create(this, "HelloApi")
-                .restApiName("HelloApi")
+        RestApi restApi = RestApi.Builder.create(this, "PersonaApi")
+                .restApiName("PersonaApi")
                 .deployOptions(StageOptions.builder().stageName("prod").build())
                 .build();
 
-        restApi.getRoot()
-                .addResource("hola")
-                .addMethod("ANY", new LambdaIntegration(hola));
+        var personas = restApi.getRoot().addResource("personas");
 
-        restApi.getRoot()
-                .addResource("adios")
-                .addMethod("ANY", new LambdaIntegration(adios));
+        // POST /personas
+        personas.addMethod("POST", new LambdaIntegration(persona));
+
+        // /personas/{nombre}
+        var personaNom = personas.addResource("{nombre}");
+        // /personas/{nombre}/{apellido}
+        var personaNomApe = personaNom.addResource("{apellido}");
+
+        // GET, PUT, DELETE en la misma Lambda
+        LambdaIntegration integ = new LambdaIntegration(persona);
+        personaNomApe.addMethod("GET",    integ);
+        personaNomApe.addMethod("PUT",    integ);
+        personaNomApe.addMethod("DELETE", integ);
 
 
     }
