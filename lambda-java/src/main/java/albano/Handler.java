@@ -108,9 +108,15 @@ public class Handler implements
     /* ---------- Helpers ---------- */
     private record NombreApellido(String nombre, String apellido) { }
 
+    private static String pathParam(APIGatewayProxyRequestEvent ev, String key) {
+        Map<String, String> params = ev.getPathParameters();
+        if (params == null || params.get(key) == null)
+            throw new IllegalArgumentException("Falta parámetro de ruta: " + key);
+        return params.get(key);
+    }
+
     private NombreApellido path(APIGatewayProxyRequestEvent ev) {
-        Map<String,String> p = ev.getPathParameters();
-        return new NombreApellido(p.get("nombre"), p.get("apellido"));
+        return new NombreApellido(pathParam(ev, "nombre"), pathParam(ev, "apellido"));
     }
 
 

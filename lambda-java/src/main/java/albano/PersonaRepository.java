@@ -18,18 +18,11 @@ public class PersonaRepository {
 
     /* ---------- C  R  E  A  T  E ---------- */
     public void create(Persona p) {
-        var item = Map.of(
-                "nombre",         AttributeValue.fromS(p.nombre()),
-                "apellido",       AttributeValue.fromS(p.apellido()),
-                "edad",           AttributeValue.fromN(Integer.toString(p.edad())),
-                "equipoFavorito", AttributeValue.fromS(p.equipoFavorito())
-        );
-
         ddb.putItem(PutItemRequest.builder()
                 .tableName(tabla)
-                .item(item)
+                .item(toItem(p))
                 // evita sobrescribir si ya existe
-                .conditionExpression("attribute_not_exists(nombre)")
+                .conditionExpression("attribute_not_exists(nombre) AND attribute_not_exists(apellido)")
                 .build());
     }
 
@@ -44,12 +37,7 @@ public class PersonaRepository {
 
         if (!resp.hasItem()) return Optional.empty();
 
-        var i = resp.item();
-        return Optional.of(new Persona(
-                i.get("nombre").s(),
-                i.get("apellido").s(),
-                Integer.parseInt(i.get("edad").n()),
-                i.get("equipoFavorito").s()));
+        return Optional.of(fromItem(resp.item()));
     }
 
     /* ---------- U  P  D  A  T  E ---------- */
@@ -60,18 +48,14 @@ public class PersonaRepository {
                         "nombre",   AttributeValue.fromS(p.nombre()),
                         "apellido", AttributeValue.fromS(p.apellido())))
                 .updateExpression("SET edad = :e, equipoFavorito = :q")
+                .conditionExpression("attribute_exists(nombre) AND attribute_exists(apellido)")
                 .expressionAttributeValues(Map.of(
                         ":e", AttributeValue.fromN(Integer.toString(p.edad())),
                         ":q", AttributeValue.fromS(p.equipoFavorito())))
                 .returnValues(ReturnValue.ALL_NEW)
                 .build());
 
-        var i = resp.attributes();
-        return new Persona(
-                i.get("nombre").s(),
-                i.get("apellido").s(),
-                Integer.parseInt(i.get("edad").n()),
-                i.get("equipoFavorito").s());
+        return fromItem(resp.attributes());
     }
 
     /* ---------- D  E  L  E  T  E ---------- */
@@ -82,5 +66,24 @@ public class PersonaRepository {
                         "nombre",   AttributeValue.fromS(nombre),
                         "apellido", AttributeValue.fromS(apellido)))
                 .build());
+    }
+
+    /* ---------- Helpers ---------- */
+    private static Map<String, AttributeValue> toItem(Persona p) {
+        return Map.of(
+                "nombre",         AttributeValue.fromS(p.nombre()),
+                "apellido",       AttributeValue.fromS(p.apellido()),
+                "edad",           AttributeValue.fromN(Integer.toString(p.edad())),
+                "equipoFavorito", AttributeValue.fromS(p.equipoFavorito())
+        );
+    }
+
+    private static Persona fromItem(Map<String, AttributeValue> item) {
+        return new Persona(
+                item.get("nombre").s(),
+                item.get("apellido").s(),
+                Integer.parseInt(item.get("edad").n()),
+                item.get("equipoFavorito").s()
+        );
     }
 }
