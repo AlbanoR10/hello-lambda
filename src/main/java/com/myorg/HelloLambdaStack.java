@@ -82,33 +82,9 @@ public class HelloLambdaStack extends Stack {
                 .layers(List.of(commonLayer))
                 .build();
 
-        Function adios = Function.Builder.create(this, "AdiosFn")
-                .runtime(Runtime.JAVA_21)
-                .architecture(Architecture.ARM_64)
-                .memorySize(512)
-                .handler("albano.AdiosHandler::handleRequest")
-                .code(Code.fromAsset(
-                        // CDK copiará TODO el directorio lambda-java al contenedor de build
-                        Path.of("lambda-java").toString(),
-                        AssetOptions.builder()
-                                .bundling(BundlingOptions.builder()
-                                        .image(Runtime.JAVA_21.getBundlingImage())  // imagen oficial de build
-                                        .user("root")
-                                        .command(List.of(
-                                                "bash", "-c",
-                                                // compila y deja el JAR en /asset-output
-                                                "mvn -q package && cp target/lambda-java-*.jar /asset-output/"
-                                        ))
-                                        .build())
-                                .build()))
-                .layers(List.of(commonLayer))
-                .build();
-
         tablaPersonas.grantReadWriteData(persona);     // holaFn puede leer/escribir
-        tablaPersonas.grantReadWriteData(adios);
 
         persona.addEnvironment("TABLA_PERSONAS", tablaPersonas.getTableName());
-        adios.addEnvironment("TABLA_PERSONAS", tablaPersonas.getTableName());
 
         RestApi restApi = RestApi.Builder.create(this, "PersonaApi")
                 .restApiName("PersonaApi")
