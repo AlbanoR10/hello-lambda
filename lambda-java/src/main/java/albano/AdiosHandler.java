@@ -24,6 +24,7 @@ public class AdiosHandler implements
 
         String body = "Adios " + nombre;
 
+
         // Construye la respuesta HTTP 200
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(200)
