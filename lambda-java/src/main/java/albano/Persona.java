@@ -1,10 +1,15 @@
 package albano;
 
 /** Modelo de dominio – se serializa y deserializa como JSON. */
-public record Persona(String nombre,
+public record Persona(String id,
+                      String nombre,
                       String apellido,
                       int edad,
                       String equipoFavorito) {
+
+    public Persona withId(String id) {
+        return new Persona(id, nombre, apellido, edad, equipoFavorito);
+    }
 
     public void validar() {
         if (nombre == null || nombre.isBlank())
