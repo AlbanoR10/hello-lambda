@@ -46,13 +46,17 @@ public class Handler implements
         try {
             logger.log("💾 Insertando ítem en DynamoDB…");
 
-            ddb.putItem(PutItemRequest.builder()
+            PutItemResponse resp =  ddb.putItem(PutItemRequest.builder()
                     .tableName(TABLA)
                     .item(Map.of(
                             "pk", AttributeValue.fromS("saludo"),
                             "sk", AttributeValue.fromS(Instant.now().toString()),
                             "nombre", AttributeValue.fromS(nombre)))
                     .build());
+
+            var http = resp.sdkHttpResponse();
+            logger.log("🔹 Dynamo status=" + http.statusCode() +
+                    ", requestId=" + http.firstMatchingHeader("x-amzn-RequestId").orElse("N/A"));
 
             logger.log("✅ Inserción completada");
 
