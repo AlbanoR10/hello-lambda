@@ -115,6 +115,7 @@ public class HelloLambdaStack extends Stack {
                 .deployOptions(StageOptions.builder().stageName("prod").build())
                 .build();
 
+
         var personas = restApi.getRoot().addResource("personas");
 
         // POST /personas
