@@ -23,11 +23,11 @@ public class Handler implements
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private final DynamoDbClient ddb = DynamoDbClient.builder()
+    private static final DynamoDbClient ddb = DynamoDbClient.builder()
             .region(REGION)           // ⬅ usa constante o lee AWS_REGION
             .build();
 
-    private final PersonaRepository repo = new PersonaRepository(ddb, TABLA);
+    private static final PersonaRepository repo = new PersonaRepository(ddb, TABLA);
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(
