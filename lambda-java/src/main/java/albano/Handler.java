@@ -10,6 +10,7 @@ import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 import java.util.Map;
 
@@ -48,6 +49,10 @@ public class Handler implements
         } catch (IllegalArgumentException | com.fasterxml.jackson.core.JsonProcessingException e) {
             logger.log("⚠️ 400: " + e.getMessage());
             return response(400, e.getMessage());
+
+        } catch (ConditionalCheckFailedException e) {
+            logger.log("⚠️ 404: " + e.getMessage());
+            return response(404, "No encontrada");
 
         } catch (DynamoDbException e) {
             logger.log("❌ Dynamo/SDK error: " + e.getMessage());

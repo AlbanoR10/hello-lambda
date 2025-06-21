@@ -68,7 +68,7 @@ public class PersonaRepository {
 
     /* ---------- U  P  D  A  T  E ---------- */
     public Persona update(Persona p) {
-        var resp = ddb.updateItem(UpdateItemRequest.builder()
+        var req = UpdateItemRequest.builder()
                 .tableName(tabla)
                 .key(Map.of(
                         "id", AttributeValue.fromS(p.id())))
@@ -78,8 +78,11 @@ public class PersonaRepository {
                         ":a", AttributeValue.fromS(p.apellido()),
                         ":e", AttributeValue.fromN(Integer.toString(p.edad())),
                         ":q", AttributeValue.fromS(p.equipoFavorito())))
+                .conditionExpression("attribute_exists(id)")
                 .returnValues(ReturnValue.ALL_NEW)
-                .build());
+                .build();
+
+        var resp = ddb.updateItem(req);
 
         var i = resp.attributes();
         return new Persona(
