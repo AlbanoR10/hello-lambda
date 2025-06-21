@@ -96,6 +96,8 @@ public class PersonaRepository {
                 .tableName(tabla)
                 .key(Map.of(
                         "id", AttributeValue.fromS(id)))
+                // evita error silencioso si no existe
+                .conditionExpression("attribute_exists(id)")
                 .build());
     }
 }
