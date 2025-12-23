@@ -57,6 +57,7 @@ public class HelloLambdaStack extends Stack {
                 .build();
 
         Function hola = Function.Builder.create(this, "HolaFn")
+                .functionName("HolaAlbano6623804420")
                 .runtime(Runtime.JAVA_21)
                 .architecture(Architecture.ARM_64)
                 .memorySize(512)
@@ -79,6 +80,7 @@ public class HelloLambdaStack extends Stack {
                 .build();
 
         Function adios = Function.Builder.create(this, "AdiosFn")
+                .functionName("AdiosAlbano66238")
                 .runtime(Runtime.JAVA_21)
                 .architecture(Architecture.ARM_64)
                 .memorySize(512)
